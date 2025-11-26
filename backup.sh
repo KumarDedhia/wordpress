@@ -37,7 +37,7 @@ echo -e "${YELLOW}Backing up WordPress files...${NC}"
 docker-compose run --rm backup sh -c "mkdir -p /backups/${BACKUP_NAME} && chmod 777 /backups/${BACKUP_NAME} && tar czf /backups/${BACKUP_NAME}/wordpress_files.tar.gz -C /var/www/html ."
 
 echo -e "${YELLOW}Backing up MySQL database...${NC}"
-docker-compose exec -T db mysqldump -u ${MYSQL_USER:-wpuser} -p${MYSQL_PASSWORD} ${MYSQL_DATABASE:-wordpress} > "${BACKUP_PATH}/database.sql"
+docker-compose exec -T db mysqldump -u ${MYSQL_USER:-wpuser} -p${MYSQL_PASSWORD} --no-tablespaces --single-transaction --quick --lock-tables=false ${MYSQL_DATABASE:-wordpress} > "${BACKUP_PATH}/database.sql"
 
 # Compress database backup
 gzip "${BACKUP_PATH}/database.sql"
