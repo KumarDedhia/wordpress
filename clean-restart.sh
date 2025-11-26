@@ -7,6 +7,10 @@ set -e
 echo "Pulling latest changes from git..."
 git pull || echo "Warning: git pull failed or not a git repository, continuing..."
 
+echo "Setting all .sh files to executable..."
+find . -maxdepth 1 -name "*.sh" -type f -exec chmod +x {} \;
+echo "✓ All shell scripts are now executable"
+
 echo "Stopping all containers..."
 docker-compose down
 
