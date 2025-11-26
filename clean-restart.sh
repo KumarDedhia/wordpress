@@ -4,6 +4,14 @@
 
 set -e
 
+echo "Checking for local changes..."
+if git diff --quiet && git diff --cached --quiet; then
+    echo "No local changes detected"
+else
+    echo "Stashing local changes..."
+    git stash push -m "Auto-stashed by clean-restart.sh on $(date +%Y-%m-%d_%H:%M:%S)" || echo "Warning: git stash failed, continuing..."
+fi
+
 echo "Pulling latest changes from git..."
 git pull || echo "Warning: git pull failed or not a git repository, continuing..."
 
