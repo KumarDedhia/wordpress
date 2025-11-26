@@ -77,7 +77,7 @@ Make sure you're running the latest version of Docker Desktop for macOS.
 # Check what's using the port
 lsof -i :8081
 lsof -i :8081
-lsof -i :21
+lsof -i :2121
 
 # Kill the process or change the port in .env
 ```

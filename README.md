@@ -76,7 +76,7 @@ Complete the WordPress installation wizard. You'll need:
 Use any FTP client with these settings:
 
 -   **Host**: `localhost` (or your server IP)
--   **Port**: `21`
+-   **Port**: `2121`
 -   **Username**: `ftpuser` (from `.env`)
 -   **Password**: The `FTP_PASS` from Step 1
 -   **Mode**: Passive (PASV)
@@ -114,7 +114,7 @@ Edit `.env` file to customize:
 -   `MYSQL_ROOT_PASSWORD`: MySQL root password (CHANGE THIS!)
 -   `FTP_USER`: FTP username
 -   `FTP_PASS`: FTP password (CHANGE THIS!)
--   `FTP_PORT`: FTP port (default: 21)
+-   `FTP_PORT`: FTP port (default: 2121)
 -   `FTP_PASV_ADDRESS`: Your server's public IP for passive FTP
 
 ### Security Settings
@@ -176,7 +176,7 @@ chmod +x restore.sh
 ### FTP Client Configuration
 
 -   **Host**: localhost (or your server IP)
--   **Port**: 21 (or port from `.env`)
+-   **Port**: 2121 (or port from `.env`)
 -   **Username**: From `FTP_USER` in `.env`
 -   **Password**: From `FTP_PASS` in `.env`
 -   **Mode**: Passive (PASV)
@@ -186,7 +186,7 @@ chmod +x restore.sh
 If accessing FTP from outside your network:
 
 1. Set `FTP_PASV_ADDRESS` to your public IP
-2. Open ports 21 and 21100-21110 in your firewall
+2. Open ports 2121 and 21100-21110 in your firewall
 3. Configure port forwarding if behind NAT
 
 ## Maintenance
@@ -252,7 +252,7 @@ docker-compose logs
 
 # Check if ports are in use
 lsof -i :8081
-lsof -i :21
+lsof -i :2121
 ```
 
 ### Database connection errors
@@ -265,7 +265,7 @@ lsof -i :21
 
 -   Verify passive mode is enabled in FTP client
 -   Check `FTP_PASV_ADDRESS` matches your public IP
--   Ensure ports 21 and 21100-21110 are open
+-   Ensure ports 2121 and 21100-21110 are open
 
 ### Permission issues
 

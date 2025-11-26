@@ -46,7 +46,7 @@ services:
     container_name: wordpress_ftp
     restart: unless-stopped
     ports:
-      - "${FTP_PORT:-21}:21"
+      - "${FTP_PORT:-2121}:21"
       - "${FTP_PASV_PORTS:-21100-21110}:21100-21110"
     environment:
       FTP_USER: ${FTP_USER:-ftpuser}
