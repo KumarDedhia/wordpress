@@ -59,8 +59,6 @@ services:
       - ./ftp-logs:/var/log/vsftpd
     networks:
       - wordpress_network
-    security_opt:
-      - no-new-privileges:true
     depends_on:
       - wordpress
 
