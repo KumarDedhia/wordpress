@@ -81,7 +81,7 @@ nginx:
 
 ```bash
 # Allow only necessary ports
-# WordPress web: 8080 (or your chosen port)
+# WordPress web: 8081 (or your chosen port)
 # FTP: 21, 21100-21110 (if needed externally)
 # Block all other ports
 ```

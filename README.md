@@ -23,7 +23,7 @@ A secure, production-ready WordPress Docker setup with MySQL, FTP support, and a
 
 2. **Run `docker-compose up -d`** - Starts WordPress, MySQL, and FTP
 
-3. **Open http://localhost:8080** - Complete WordPress installation
+3. **Open http://localhost:8081** - Complete WordPress installation
 
 That's it! See [Quick Start](#quick-start) below for detailed steps.
 
@@ -62,7 +62,7 @@ Wait for all containers to be healthy (check with `docker-compose ps`).
 
 Open your browser and go to:
 
--   **WordPress**: http://localhost:8080
+-   **WordPress**: http://localhost:8081
 
 Complete the WordPress installation wizard. You'll need:
 
@@ -107,7 +107,7 @@ docker-compose up -d
 
 Edit `.env` file to customize:
 
--   `WORDPRESS_PORT`: WordPress web port (default: 8080)
+-   `WORDPRESS_PORT`: WordPress web port (default: 8081)
 -   `MYSQL_DATABASE`: Database name
 -   `MYSQL_USER`: Database user
 -   `MYSQL_PASSWORD`: Database password (CHANGE THIS!)
@@ -251,7 +251,7 @@ docker-compose run --rm wordpress wp plugin list
 docker-compose logs
 
 # Check if ports are in use
-lsof -i :8080
+lsof -i :8081
 lsof -i :21
 ```
 

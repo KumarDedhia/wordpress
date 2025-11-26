@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   db:
     image: mysql:8.0
@@ -12,23 +10,22 @@ services:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
     volumes:
       - db_data:/var/lib/mysql
-      - ./backups/db:/backups
     networks:
       - wordpress_network
     command: --default-authentication-plugin=mysql_native_password --max_allowed_packet=256M
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$$MYSQL_ROOT_PASSWORD"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 10s
       timeout: 5s
       retries: 10
-      start_period: 30s
+      start_period: 40s
 
   wordpress:
     image: wordpress:latest
     container_name: wordpress_app
     restart: unless-stopped
     ports:
-      - "${WORDPRESS_PORT:-8080}:80"
+      - "${WORDPRESS_PORT:-8081}:80"
     environment:
       WORDPRESS_DB_HOST: db:3306
       WORDPRESS_DB_USER: ${MYSQL_USER:-wpuser}
@@ -38,19 +35,11 @@ services:
       WORDPRESS_DEBUG: ${WORDPRESS_DEBUG:-0}
     volumes:
       - wordpress_data:/var/www/html
-      - ./wp-config-custom.php:/var/www/html/wp-config-custom.php:ro
-      - ./uploads.ini:/usr/local/etc/php/conf.d/uploads.ini:ro
     networks:
       - wordpress_network
     depends_on:
-      db:
-        condition: service_healthy
-    security_opt:
-      - no-new-privileges:true
-    read_only: false
-    tmpfs:
-      - /tmp
-      - /var/tmp
+      - db
+    user: "33:33"
 
   ftp:
     image: fauria/vsftpd:latest
