@@ -1,0 +1,23 @@
+# Environment files
+.env
+.env.local
+
+# Backup files
+backups/*.tar.gz
+backups/*.sql
+backups/*.sql.gz
+!backups/.gitkeep
+
+# WordPress uploads (if synced locally)
+# wp-content/uploads/
+
+# FTP logs
+ftp-logs/
+
+# Docker volumes (if mounted locally)
+# wordpress_data/
+# db_data/
+
+# OS files
+.DS_Store
+Thumbs.db

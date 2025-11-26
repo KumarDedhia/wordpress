@@ -1,0 +1,107 @@
+version: '3.8'
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: wordpress_db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-wordpress}
+      MYSQL_USER: ${MYSQL_USER:-wpuser}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./backups/db:/backups
+    networks:
+      - wordpress_network
+    security_opt:
+      - no-new-privileges:true
+    command: --default-authentication-plugin=mysql_native_password --max_allowed_packet=256M
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  wordpress:
+    image: wordpress:latest
+    container_name: wordpress_app
+    restart: unless-stopped
+    ports:
+      - "${WORDPRESS_PORT:-8080}:80"
+    environment:
+      WORDPRESS_DB_HOST: db:3306
+      WORDPRESS_DB_USER: ${MYSQL_USER:-wpuser}
+      WORDPRESS_DB_PASSWORD: ${MYSQL_PASSWORD}
+      WORDPRESS_DB_NAME: ${MYSQL_DATABASE:-wordpress}
+      WORDPRESS_TABLE_PREFIX: ${WORDPRESS_TABLE_PREFIX:-wp_}
+      WORDPRESS_DEBUG: ${WORDPRESS_DEBUG:-0}
+    volumes:
+      - wordpress_data:/var/www/html
+      - ./wp-config-custom.php:/var/www/html/wp-config-custom.php:ro
+      - ./uploads.ini:/usr/local/etc/php/conf.d/uploads.ini:ro
+    networks:
+      - wordpress_network
+    depends_on:
+      db:
+        condition: service_healthy
+    security_opt:
+      - no-new-privileges:true
+    read_only: false
+    tmpfs:
+      - /tmp
+      - /var/tmp
+
+  ftp:
+    image: fauria/vsftpd:latest
+    container_name: wordpress_ftp
+    restart: unless-stopped
+    ports:
+      - "${FTP_PORT:-21}:21"
+      - "${FTP_PASV_PORTS:-21100-21110}:21100-21110"
+    environment:
+      FTP_USER: ${FTP_USER:-ftpuser}
+      FTP_PASS: ${FTP_PASS}
+      PASV_ADDRESS: ${FTP_PASV_ADDRESS:-localhost}
+      PASV_MIN_PORT: 21100
+      PASV_MAX_PORT: 21110
+    volumes:
+      - wordpress_data:/home/vsftpd/ftpuser
+      - ./ftp-logs:/var/log/vsftpd
+    networks:
+      - wordpress_network
+    security_opt:
+      - no-new-privileges:true
+    depends_on:
+      - wordpress
+
+  backup:
+    image: wordpress:cli
+    container_name: wordpress_backup
+    restart: "no"
+    volumes:
+      - wordpress_data:/var/www/html:ro
+      - db_data:/var/lib/mysql:ro
+      - ./backups:/backups
+    networks:
+      - wordpress_network
+    environment:
+      WORDPRESS_DB_HOST: db:3306
+      WORDPRESS_DB_USER: ${MYSQL_USER:-wpuser}
+      WORDPRESS_DB_PASSWORD: ${MYSQL_PASSWORD}
+      WORDPRESS_DB_NAME: ${MYSQL_DATABASE:-wordpress}
+    command: tail -f /dev/null
+    profiles:
+      - tools
+
+volumes:
+  db_data:
+    driver: local
+  wordpress_data:
+    driver: local
+
+networks:
+  wordpress_network:
+    driver: bridge
+    internal: false
