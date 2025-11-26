@@ -66,6 +66,7 @@ services:
     image: wordpress:cli
     container_name: wordpress_backup
     restart: "no"
+    user: "0:0"
     volumes:
       - wordpress_data:/var/www/html:ro
       - db_data:/var/lib/mysql:ro
