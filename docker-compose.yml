@@ -15,14 +15,13 @@ services:
       - ./backups/db:/backups
     networks:
       - wordpress_network
-    security_opt:
-      - no-new-privileges:true
     command: --default-authentication-plugin=mysql_native_password --max_allowed_packet=256M
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$$MYSQL_ROOT_PASSWORD"]
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 10
+      start_period: 30s
 
   wordpress:
     image: wordpress:latest
