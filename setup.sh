@@ -58,12 +58,34 @@ mkdir -p ftp-logs
 touch backups/.gitkeep
 
 # Set permissions
-chmod +x backup.sh restore.sh
+chmod +x backup.sh restore.sh fix-wordpress-filesystem.sh 2>/dev/null || true
 
 echo -e "${GREEN}✓ Setup complete!${NC}"
 echo ""
 echo "Next steps:"
 echo "1. Review .env file and adjust settings if needed"
 echo "2. Run: docker-compose up -d"
-echo "3. Access WordPress at: http://localhost:8081"
+echo "3. Wait for containers to start (about 30 seconds), then run:"
+echo "   ./fix-wordpress-filesystem.sh"
+echo "4. Access WordPress at: http://localhost:8081"
+echo ""
+read -p "Do you want to start containers now and install the filesystem fix? (yes/no): " start_now
+
+if [ "$start_now" = "yes" ]; then
+    echo ""
+    echo -e "${GREEN}Starting containers...${NC}"
+    docker-compose up -d
+
+    echo -e "${YELLOW}Waiting for WordPress container to be ready...${NC}"
+    sleep 10
+
+    echo -e "${GREEN}Installing WordPress filesystem fix...${NC}"
+    ./fix-wordpress-filesystem.sh
+
+    echo ""
+    echo -e "${GREEN}✓ All done! WordPress is ready at http://localhost:8081${NC}"
+else
+    echo ""
+    echo -e "${YELLOW}Remember to run './fix-wordpress-filesystem.sh' after starting containers!${NC}"
+fi
 echo ""

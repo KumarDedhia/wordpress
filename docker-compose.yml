@@ -35,6 +35,7 @@ services:
       WORDPRESS_DEBUG: ${WORDPRESS_DEBUG:-0}
     volumes:
       - wordpress_data:/var/www/html
+      - ./wordpress-config-fix.php:/var/www/html/wp-content/mu-plugins/wordpress-config-fix.php:ro
     networks:
       - wordpress_network
     depends_on:

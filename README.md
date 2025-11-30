@@ -275,6 +275,25 @@ docker-compose exec wordpress chown -R www-data:www-data /var/www/html
 docker-compose exec wordpress chmod -R 755 /var/www/html
 ```
 
+### Plugin/Theme Installation Issues (FTP Error)
+
+If you get FTP connection errors when installing plugins or themes:
+
+The setup includes a must-use plugin that forces direct filesystem access. If you still have issues:
+
+```bash
+# Ensure the mu-plugins directory exists
+docker-compose exec wordpress mkdir -p /var/www/html/wp-content/mu-plugins
+
+# Verify the fix is installed
+docker-compose exec wordpress ls -la /var/www/html/wp-content/mu-plugins/
+
+# Restart WordPress container
+docker-compose restart wordpress
+```
+
+WordPress should now use direct filesystem access instead of FTP for plugin/theme operations.
+
 ## Clean Installation
 
 To completely remove and reinstall:

@@ -29,6 +29,10 @@ define('WP_FAIL2BAN_BLOCKED_USERS', array());
 define('WP_MEMORY_LIMIT', '256M');
 define('WP_MAX_MEMORY_LIMIT', '512M');
 
+// Filesystem: Force direct filesystem access (no FTP required)
+// This allows WordPress to install/update plugins and themes directly
+define('FS_METHOD', 'direct');
+
 // Security: Disable directory browsing
 if (!defined('ABSPATH')) {
     define('ABSPATH', dirname(__FILE__) . '/');
