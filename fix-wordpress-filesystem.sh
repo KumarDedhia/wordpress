@@ -12,6 +12,15 @@ if ! docker-compose ps | grep -q "wordpress_app.*Up"; then
     exit 1
 fi
 
+# Reset permissions so WordPress can write to wp-content (plugins/themes/uploads/upgrade)
+echo "Resetting wp-content ownership and permissions..."
+docker-compose exec wordpress chown -R www-data:www-data /var/www/html/wp-content
+docker-compose exec wordpress find /var/www/html/wp-content -type d -exec chmod 775 {} \;
+docker-compose exec wordpress find /var/www/html/wp-content -type f -exec chmod 664 {} \;
+docker-compose exec wordpress mkdir -p /var/www/html/wp-content/upgrade
+docker-compose exec wordpress chmod 775 /var/www/html/wp-content/upgrade
+echo "✓ wp-content directory is writable by WordPress"
+
 # Ensure mu-plugins directory exists (the file is already mounted via docker-compose)
 docker-compose exec wordpress mkdir -p /var/www/html/wp-content/mu-plugins 2>/dev/null || true
 
