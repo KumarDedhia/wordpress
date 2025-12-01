@@ -53,6 +53,17 @@ docker-compose stop wordpress
 echo -e "${YELLOW}Restoring WordPress files...${NC}"
 docker-compose run --rm backup sh -c "rm -rf /var/www/html/* && tar xzf /backups/restore_temp/wordpress_files.tar.gz -C /var/www/html"
 
+# Restore WordPress config fix if it exists in backup
+if [ -f "${TEMP_DIR}/wordpress-config-fix.php" ]; then
+    echo -e "${YELLOW}Restoring WordPress config fix...${NC}"
+    cp "${TEMP_DIR}/wordpress-config-fix.php" ./wordpress-config-fix.php
+    # Ensure mu-plugins directory exists and fix is in place
+    docker-compose exec wordpress mkdir -p /var/www/html/wp-content/mu-plugins 2>/dev/null || true
+    docker-compose cp wordpress-config-fix.php wordpress:/var/www/html/wp-content/mu-plugins/wordpress-config-fix.php 2>/dev/null || true
+    docker-compose exec wordpress chown www-data:www-data /var/www/html/wp-content/mu-plugins/wordpress-config-fix.php 2>/dev/null || true
+    docker-compose exec wordpress chmod 644 /var/www/html/wp-content/mu-plugins/wordpress-config-fix.php 2>/dev/null || true
+fi
+
 # Restore database
 echo -e "${YELLOW}Restoring MySQL database...${NC}"
 gunzip -c "${TEMP_DIR}/database.sql.gz" | docker-compose exec -T db mysql -u ${MYSQL_USER:-wpuser} -p${MYSQL_PASSWORD} ${MYSQL_DATABASE:-wordpress}
@@ -64,4 +75,14 @@ rm -rf "${TEMP_DIR}"
 echo -e "${YELLOW}Starting WordPress container...${NC}"
 docker-compose start wordpress
 
+# Wait a moment for container to be ready
+sleep 5
+
+# Ensure WordPress filesystem fix is installed
+echo -e "${YELLOW}Ensuring WordPress filesystem fix is installed...${NC}"
+if [ -f "./fix-wordpress-filesystem.sh" ]; then
+    ./fix-wordpress-filesystem.sh 2>/dev/null || echo "Note: Filesystem fix installation skipped (may already be installed)"
+fi
+
 echo -e "${GREEN}Restore completed successfully!${NC}"
+echo -e "${YELLOW}Note: If you have issues installing plugins, run: ./fix-wordpress-filesystem.sh${NC}"

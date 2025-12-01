@@ -21,6 +21,13 @@ NC='\033[0m' # No Color
 
 echo -e "${GREEN}Starting WordPress backup...${NC}"
 
+# Check if containers are running
+if ! docker-compose ps | grep -q "wordpress_app.*Up"; then
+    echo -e "${YELLOW}Warning: WordPress container is not running. Starting containers...${NC}"
+    docker-compose up -d
+    sleep 5
+fi
+
 # Create backup directory if it doesn't exist
 mkdir -p "${BACKUP_DIR}"
 
@@ -34,7 +41,14 @@ chmod 777 "${BACKUP_PATH}" 2>/dev/null || true
 
 echo -e "${YELLOW}Backing up WordPress files...${NC}"
 # Create directory inside container first, then backup
+# This includes wp-content/mu-plugins/wordpress-config-fix.php (filesystem fix)
 docker-compose run --rm backup sh -c "mkdir -p /backups/${BACKUP_NAME} && chmod 777 /backups/${BACKUP_NAME} && tar czf /backups/${BACKUP_NAME}/wordpress_files.tar.gz -C /var/www/html ."
+
+# Also backup the local config fix file (in case it's not in the volume)
+if [ -f "wordpress-config-fix.php" ]; then
+    echo -e "${YELLOW}Backing up local WordPress config fix...${NC}"
+    cp wordpress-config-fix.php "${BACKUP_PATH}/wordpress-config-fix.php"
+fi
 
 echo -e "${YELLOW}Backing up MySQL database...${NC}"
 docker-compose exec -T db mysqldump -u ${MYSQL_USER:-wpuser} -p${MYSQL_PASSWORD} --no-tablespaces --single-transaction --quick --lock-tables=false ${MYSQL_DATABASE:-wordpress} > "${BACKUP_PATH}/database.sql"
@@ -46,6 +60,10 @@ echo -e "${YELLOW}Creating backup archive...${NC}"
 cd "${BACKUP_DIR}"
 tar czf "${BACKUP_NAME}.tar.gz" "${BACKUP_NAME}"
 rm -rf "${BACKUP_NAME}"
+
+# Display backup info
+BACKUP_SIZE=$(du -h "${BACKUP_NAME}.tar.gz" | cut -f1)
+echo -e "${GREEN}Backup size: ${BACKUP_SIZE}${NC}"
 
 echo -e "${GREEN}Backup completed: ${BACKUP_PATH}.tar.gz${NC}"
 
