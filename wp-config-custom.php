@@ -26,8 +26,8 @@ add_filter('xmlrpc_enabled', '__return_false');
 define('WP_FAIL2BAN_BLOCKED_USERS', array());
 
 // Performance: Increase memory limit
-define('WP_MEMORY_LIMIT', '256M');
-define('WP_MAX_MEMORY_LIMIT', '512M');
+define('WP_MEMORY_LIMIT', '512M');
+define('WP_MAX_MEMORY_LIMIT', '768M');
 
 // Filesystem: Force direct filesystem access (no FTP required)
 // This allows WordPress to install/update plugins and themes directly

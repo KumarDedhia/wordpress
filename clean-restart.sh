@@ -4,6 +4,81 @@
 
 set -e
 
+# Convert memory string like 512M/1G to MB
+to_mb() {
+  local val="$1"
+  local num unit
+  num="${val%[MmGg]}"
+  unit="${val: -1}"
+  if [[ "$unit" == "G" || "$unit" == "g" ]]; then
+    echo $((num * 1024))
+  else
+    echo "$num"
+  fi
+}
+
+check_memory_resources() {
+  echo "Checking system memory vs PHP/WordPress limits..."
+
+  # Detect total system memory (MB)
+  local total_mb="0"
+  if [ -r /proc/meminfo ]; then
+    # Linux
+    local kb
+    kb=$(grep MemTotal /proc/meminfo | awk '{print $2}')
+    total_mb=$((kb / 1024))
+  else
+    # macOS / other (best-effort)
+    if command -v sysctl >/dev/null 2>&1; then
+      local bytes
+      bytes=$(sysctl -n hw.memsize 2>/dev/null || echo 0)
+      total_mb=$((bytes / 1024 / 1024))
+    fi
+  fi
+
+  if [ "$total_mb" -le 0 ]; then
+    echo "  Could not detect total system memory. Skipping resource check."
+    return 0
+  fi
+
+  # Read PHP limits from uploads.ini if present
+  local php_mem="512M"
+  local php_post="256M"
+  local php_upload="256M"
+
+  if [ -f "uploads.ini" ]; then
+    php_mem=$(grep -i '^memory_limit' uploads.ini | awk -F'=' '{gsub(/ /,"",$2);print $2}' || echo "$php_mem")
+    php_post=$(grep -i '^post_max_size' uploads.ini | awk -F'=' '{gsub(/ /,"",$2);print $2}' || echo "$php_post")
+    php_upload=$(grep -i '^upload_max_filesize' uploads.ini | awk -F'=' '{gsub(/ /,"",$2);print $2}' || echo "$php_upload")
+  fi
+
+  local php_mem_mb php_post_mb php_upload_mb
+  php_mem_mb=$(to_mb "$php_mem")
+  php_post_mb=$(to_mb "$php_post")
+  php_upload_mb=$(to_mb "$php_upload")
+
+  echo "  System memory:        ${total_mb} MB"
+  echo "  PHP memory_limit:     ${php_mem} (${php_mem_mb} MB)"
+  echo "  PHP post_max_size:    ${php_post} (${php_post_mb} MB)"
+  echo "  PHP upload_max_filesize: ${php_upload} (${php_upload_mb} MB)"
+
+  if [ "$php_post_mb" -gt "$php_mem_mb" ] || [ "$php_upload_mb" -gt "$php_mem_mb" ]; then
+    echo "  Warning: post_max_size / upload_max_filesize are larger than memory_limit."
+    echo "           Consider increasing memory_limit or reducing these sizes."
+  fi
+
+  if [ "$php_mem_mb" -gt $(( total_mb - 256 )) ]; then
+    echo "  Warning: PHP memory_limit is close to or above available system memory."
+    echo "           You may want to lower memory_limit or increase server RAM."
+  fi
+
+  if [ "$total_mb" -lt 1024 ]; then
+    echo "  Warning: Total system memory (${total_mb} MB) is below the recommended 1024 MB for this setup."
+  fi
+}
+
+check_memory_resources
+
 echo "Checking for local changes..."
 if git diff --quiet && git diff --cached --quiet; then
     echo "No local changes detected"

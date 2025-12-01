@@ -8,6 +8,85 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
 
+# Convert memory string like 512M/1G to MB
+to_mb() {
+  local val="$1"
+  local num unit
+  num="${val%[MmGg]}"
+  unit="${val: -1}"
+  if [[ "$unit" == "G" || "$unit" == "g" ]]; then
+    echo $((num * 1024))
+  else
+    echo "$num"
+  fi
+}
+
+check_memory_resources() {
+  echo -e "${GREEN}Checking system memory vs PHP/WordPress limits...${NC}"
+
+  # Detect total system memory (MB)
+  local total_mb="0"
+  if [ -r /proc/meminfo ]; then
+    # Linux
+    local kb
+    kb=$(grep MemTotal /proc/meminfo | awk '{print $2}')
+    total_mb=$((kb / 1024))
+  else
+    # macOS / other (best-effort)
+    if command -v sysctl >/dev/null 2>&1; then
+      local bytes
+      bytes=$(sysctl -n hw.memsize 2>/dev/null || echo 0)
+      total_mb=$((bytes / 1024 / 1024))
+    fi
+  fi
+
+  if [ "$total_mb" -le 0 ]; then
+    echo -e "${YELLOW}Could not detect total system memory. Skipping resource check.${NC}"
+    return 0
+  fi
+
+  # Read PHP limits from uploads.ini if present
+  local php_mem="512M"
+  local php_post="256M"
+  local php_upload="256M"
+  local php_input_vars="5000"
+
+  if [ -f "uploads.ini" ]; then
+    php_mem=$(grep -i '^memory_limit' uploads.ini | awk -F'=' '{gsub(/ /,"",$2);print $2}' || echo "$php_mem")
+    php_post=$(grep -i '^post_max_size' uploads.ini | awk -F'=' '{gsub(/ /,"",$2);print $2}' || echo "$php_post")
+    php_upload=$(grep -i '^upload_max_filesize' uploads.ini | awk -F'=' '{gsub(/ /,"",$2);print $2}' || echo "$php_upload")
+    php_input_vars=$(grep -i '^max_input_vars' uploads.ini | awk -F'=' '{gsub(/ /,"",$2);print $2}' || echo "$php_input_vars")
+  fi
+
+  local php_mem_mb php_post_mb php_upload_mb
+  php_mem_mb=$(to_mb "$php_mem")
+  php_post_mb=$(to_mb "$php_post")
+  php_upload_mb=$(to_mb "$php_upload")
+
+  echo -e "  System memory:        ${total_mb} MB"
+  echo -e "  PHP memory_limit:     ${php_mem} (${php_mem_mb} MB)"
+  echo -e "  PHP post_max_size:    ${php_post} (${php_post_mb} MB)"
+  echo -e "  PHP upload_max_filesize: ${php_upload} (${php_upload_mb} MB)"
+  echo -e "  PHP max_input_vars:   ${php_input_vars}"
+
+  # Basic sanity checks
+  if [ "$php_post_mb" -gt "$php_mem_mb" ] || [ "$php_upload_mb" -gt "$php_mem_mb" ]; then
+    echo -e "${YELLOW}Warning: post_max_size / upload_max_filesize are larger than memory_limit.${NC}"
+    echo -e "${YELLOW}         Consider increasing memory_limit or reducing these sizes.${NC}"
+  fi
+
+  # Warn if PHP memory_limit is very high compared to system RAM
+  if [ "$php_mem_mb" -gt $(( total_mb - 256 )) ]; then
+    echo -e "${YELLOW}Warning: PHP memory_limit is close to or above available system memory.${NC}"
+    echo -e "${YELLOW}         You may want to lower memory_limit or increase server RAM.${NC}"
+  fi
+
+  # Soft recommendation: at least 1 GB RAM for this config
+  if [ "$total_mb" -lt 1024 ]; then
+    echo -e "${YELLOW}Warning: Total system memory (${total_mb} MB) is below the recommended 1024 MB for this setup.${NC}"
+  fi
+}
+
 echo -e "${GREEN}WordPress Docker Setup${NC}"
 echo ""
 
@@ -59,6 +138,9 @@ touch backups/.gitkeep
 
 # Set permissions
 chmod +x backup.sh restore.sh fix-wordpress-filesystem.sh 2>/dev/null || true
+
+echo ""
+check_memory_resources
 
 echo -e "${GREEN}✓ Setup complete!${NC}"
 echo ""
