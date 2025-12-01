@@ -122,3 +122,16 @@ docker-compose ps
 echo ""
 echo "FTP should now be running on port 2121"
 echo "Check with: docker-compose ps"
+
+if [ -x "./fix-wordpress-filesystem.sh" ]; then
+    echo ""
+    echo "Reapplying WordPress filesystem permissions/fix..."
+    if ./fix-wordpress-filesystem.sh; then
+        echo "✓ WordPress filesystem fix re-applied successfully."
+    else
+        echo "Warning: fix-wordpress-filesystem.sh encountered an error. Run it manually if needed."
+    fi
+else
+    echo ""
+    echo "Note: fix-wordpress-filesystem.sh not found or not executable. Run it manually if plugin installs fail."
+fi
