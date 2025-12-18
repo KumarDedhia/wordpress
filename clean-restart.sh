@@ -95,7 +95,14 @@ find . -maxdepth 1 -name "*.sh" -type f -exec chmod +x {} \;
 echo "✓ All shell scripts are now executable"
 
 echo "Stopping all containers..."
-docker-compose down
+if ! docker-compose down 2>/dev/null; then
+    echo "Warning: docker-compose down failed, trying force stop..."
+    # Force stop containers individually
+    docker stop wordpress_app wordpress_db wordpress_ftp 2>/dev/null || true
+    docker rm -f wordpress_app wordpress_db wordpress_ftp 2>/dev/null || true
+    # Try docker-compose down again
+    docker-compose down 2>/dev/null || true
+fi
 
 echo "Removing FTP container if it exists..."
 docker rm -f wordpress_ftp 2>/dev/null || true
