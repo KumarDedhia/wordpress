@@ -55,12 +55,12 @@ echo "New URL: $NEW_URL"
 "${compose_cmd[@]}" --profile tools run --rm backup wp search-replace \
   "$OLD_URL" "$NEW_URL" \
   --all-tables --precise --recurse-objects --skip-columns=guid \
-  --path=/var/www/html \
+  --path=/var/www/html --allow-root \
   ${DRY_RUN_FLAG}
 
 if [[ -z "$DRY_RUN_FLAG" ]]; then
-  "${compose_cmd[@]}" --profile tools run --rm backup wp option update home "$NEW_URL" --path=/var/www/html
-  "${compose_cmd[@]}" --profile tools run --rm backup wp option update siteurl "$NEW_URL" --path=/var/www/html
+  "${compose_cmd[@]}" --profile tools run --rm backup wp option update home "$NEW_URL" --path=/var/www/html --allow-root
+  "${compose_cmd[@]}" --profile tools run --rm backup wp option update siteurl "$NEW_URL" --path=/var/www/html --allow-root
   echo "URL migration complete."
 else
   echo "Dry run complete. Re-run with --apply to perform changes."
