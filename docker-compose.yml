@@ -87,10 +87,8 @@ services:
 volumes:
   db_data:
     driver: local
-    name: ${DB_DATA_VOLUME:-db_data}
   wordpress_data:
     driver: local
-    name: ${WORDPRESS_DATA_VOLUME:-wordpress_data}
 
 networks:
   wordpress_network:
