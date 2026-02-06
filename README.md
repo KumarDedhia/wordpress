@@ -4,18 +4,70 @@ A secure, production-ready WordPress Docker setup with MySQL, FTP support, and a
 
 ## Features
 
--   ✅ **Security Hardened**: Non-root containers, security headers, file editing disabled
--   ✅ **Easy Backups**: Automated backup scripts for files and database
--   ✅ **FTP Support**: Integrated FTP server for file management
--   ✅ **Health Checks**: Automatic container health monitoring
--   ✅ **Volume Management**: Persistent data storage with Docker volumes
+- ✅ **Security Hardened**: Non-root containers, security headers, file editing disabled
+- ✅ **Easy Backups**: Automated backup scripts for files and database
+- ✅ **FTP Support**: Integrated FTP server for file management
+- ✅ **Health Checks**: Automatic container health monitoring
+- ✅ **Volume Management**: Persistent data storage with Docker volumes
+
+## Prerequisites
+
+- **Docker Engine**: Version 20.10+ recommended. Verify with:
+
+```bash
+docker --version
+```
+
+- **Docker Compose**: Prefer the Compose v2 plugin (`docker compose`) or the standalone `docker-compose`. Verify with:
+
+```bash
+docker compose version
+# or for legacy
+docker-compose --version
+```
+
+- **System resources**: At least 2 GB RAM, 2 CPU cores, and ~10 GB free disk space for images/volumes.
+
+- **Open ports**: Ensure the host ports you plan to use are available (default values used by this setup):
+    - WordPress: `8081` (map to container port 80)
+    - FTP control: `2121`
+    - FTP passive range: `21100-21110`
+
+- **Firewall / NAT**: If the server is behind a firewall or NAT, open/forward the ports above and set `FTP_PASV_ADDRESS` in your `.env` to the public IP.
+
+- **Recommended installs**:
+    - macOS (Docker Desktop):
+
+        ```bash
+        brew install --cask docker
+        open /Applications/Docker.app
+        ```
+
+    - Ubuntu/Debian (Docker CE + Compose plugin):
+
+        ```bash
+        sudo apt update
+        sudo apt install -y docker.io docker-compose-plugin
+        sudo systemctl enable --now docker
+        sudo usermod -aG docker $USER
+        # Log out/in for group to take effect
+        ```
+
+- **Verify setup**:
+
+```bash
+docker --version
+docker compose version
+docker info | head -n 20
+```
+
+If you plan to run a second instance (prod) on the same host, reserve a different set of host ports (for example, `8082`, `2222`, and `21120-21130`) and use a separate `.env` file as described later in this README.
 
 ## Getting Started
 
 **New Installation?** Start here:
 
 1. **Run `./setup.sh`** - This automated script:
-
     - Creates your `.env` configuration file
     - Generates secure random passwords automatically
     - Sets up all necessary directories
@@ -33,10 +85,10 @@ That's it! See [Quick Start](#quick-start) below for detailed steps.
 
 The `setup.sh` script automatically:
 
--   Creates `.env` file with secure configuration
--   **Generates strong random passwords** for MySQL and FTP
--   Creates necessary directories
--   Sets up file permissions
+- Creates `.env` file with secure configuration
+- **Generates strong random passwords** for MySQL and FTP
+- Creates necessary directories
+- Sets up file permissions
 
 ```bash
 # Make setup script executable and run it
@@ -62,24 +114,24 @@ Wait for all containers to be healthy (check with `docker-compose ps`).
 
 Open your browser and go to:
 
--   **WordPress**: http://localhost:8081
+- **WordPress**: http://localhost:8081
 
 Complete the WordPress installation wizard. You'll need:
 
--   Database name: `wordpress` (from `.env`)
--   Database user: `wpuser` (from `.env`)
--   Database password: The `MYSQL_PASSWORD` from Step 1
--   Database host: `db` (already configured)
+- Database name: `wordpress` (from `.env`)
+- Database user: `wpuser` (from `.env`)
+- Database password: The `MYSQL_PASSWORD` from Step 1
+- Database host: `db` (already configured)
 
 ### Step 4: Access FTP (Optional)
 
 Use any FTP client with these settings:
 
--   **Host**: `localhost` (or your server IP)
--   **Port**: `2121`
--   **Username**: `ftpuser` (from `.env`)
--   **Password**: The `FTP_PASS` from Step 1
--   **Mode**: Passive (PASV)
+- **Host**: `localhost` (or your server IP)
+- **Port**: `2121`
+- **Username**: `ftpuser` (from `.env`)
+- **Password**: The `FTP_PASS` from Step 1
+- **Mode**: Passive (PASV)
 
 ---
 
@@ -107,25 +159,25 @@ docker-compose up -d
 
 Edit `.env` file to customize:
 
--   `WORDPRESS_PORT`: WordPress web port (default: 8081)
--   `MYSQL_DATABASE`: Database name
--   `MYSQL_USER`: Database user
--   `MYSQL_PASSWORD`: Database password (CHANGE THIS!)
--   `MYSQL_ROOT_PASSWORD`: MySQL root password (CHANGE THIS!)
--   `FTP_USER`: FTP username
--   `FTP_PASS`: FTP password (CHANGE THIS!)
--   `FTP_PORT`: FTP port (default: 2121)
--   `FTP_PASV_ADDRESS`: Your server's public IP for passive FTP
+- `WORDPRESS_PORT`: WordPress web port (default: 8081)
+- `MYSQL_DATABASE`: Database name
+- `MYSQL_USER`: Database user
+- `MYSQL_PASSWORD`: Database password (CHANGE THIS!)
+- `MYSQL_ROOT_PASSWORD`: MySQL root password (CHANGE THIS!)
+- `FTP_USER`: FTP username
+- `FTP_PASS`: FTP password (CHANGE THIS!)
+- `FTP_PORT`: FTP port (default: 2121)
+- `FTP_PASV_ADDRESS`: Your server's public IP for passive FTP
 
 ### Security Settings
 
 The setup includes:
 
--   Non-root container execution
--   File editing disabled in WordPress admin
--   XML-RPC disabled
--   Security headers configured
--   Limited container privileges
+- Non-root container execution
+- File editing disabled in WordPress admin
+- XML-RPC disabled
+- Security headers configured
+- Limited container privileges
 
 ## Backups
 
@@ -141,10 +193,25 @@ chmod +x backup.sh
 
 The backup script creates a compressed archive containing:
 
--   All WordPress files
--   Complete MySQL database dump
--   Stored in `./backups/` with timestamp
--   Automatically cleans up backups older than 7 days
+- All WordPress files
+- Complete MySQL database dump
+- Stored in `./backups/` with timestamp
+- Automatically cleans up backups older than 7 days
+
+## URL Migration (Beta → Prod)
+
+Use this script to safely replace the site URL in the database for future migrations.
+It runs a dry run by default; pass `--apply` to execute changes.
+
+```bash
+chmod +x migrate-url.sh
+
+# Dry run
+./migrate-url.sh https://beta.example.com https://example.com
+
+# Apply changes
+./migrate-url.sh https://beta.example.com https://example.com --apply
+```
 
 Backups are stored in `./backups/` directory with timestamp.
 
@@ -175,11 +242,11 @@ chmod +x restore.sh
 
 ### FTP Client Configuration
 
--   **Host**: localhost (or your server IP)
--   **Port**: 2121 (or port from `.env`)
--   **Username**: From `FTP_USER` in `.env`
--   **Password**: From `FTP_PASS` in `.env`
--   **Mode**: Passive (PASV)
+- **Host**: localhost (or your server IP)
+- **Port**: 2121 (or port from `.env`)
+- **Username**: From `FTP_USER` in `.env`
+- **Password**: From `FTP_PASS` in `.env`
+- **Mode**: Passive (PASV)
 
 ### FTP Passive Mode
 
@@ -257,15 +324,15 @@ lsof -i :2121
 
 ### Database connection errors
 
--   Verify MySQL container is healthy: `docker-compose ps`
--   Check database credentials in `.env`
--   Ensure MySQL container started first (health check)
+- Verify MySQL container is healthy: `docker-compose ps`
+- Check database credentials in `.env`
+- Ensure MySQL container started first (health check)
 
 ### FTP connection issues
 
--   Verify passive mode is enabled in FTP client
--   Check `FTP_PASV_ADDRESS` matches your public IP
--   Ensure ports 2121 and 21100-21110 are open
+- Verify passive mode is enabled in FTP client
+- Check `FTP_PASV_ADDRESS` matches your public IP
+- Ensure ports 2121 and 21100-21110 are open
 
 ### Permission issues
 
@@ -314,9 +381,9 @@ docker-compose up -d
 
 ## Backup Locations
 
--   **WordPress Files**: `wordpress_data` Docker volume
--   **Database**: `db_data` Docker volume
--   **Backup Archives**: `./backups/` directory
+- **WordPress Files**: `wordpress_data` Docker volume
+- **Database**: `db_data` Docker volume
+- **Backup Archives**: `./backups/` directory
 
 ## Support
 
