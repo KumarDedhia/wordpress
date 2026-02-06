@@ -87,8 +87,10 @@ services:
 volumes:
   db_data:
     driver: local
+    external: true
   wordpress_data:
     driver: local
+    external: true
 
 networks:
   wordpress_network:
