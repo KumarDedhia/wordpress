@@ -43,14 +43,56 @@ docker-compose --version
         open /Applications/Docker.app
         ```
 
-    - Ubuntu/Debian (Docker CE + Compose plugin):
+    - Ubuntu/Debian - **Method 1: Official Docker Repository (Recommended)**:
 
         ```bash
-        sudo apt update
-        sudo apt install -y docker.io docker-compose-plugin
+        # Remove old/snap versions first
+        sudo snap remove docker 2>/dev/null || true
+        sudo apt remove docker docker-engine docker.io containerd runc 2>/dev/null || true
+
+        # Install from official Docker repository
+        curl -fsSL https://get.docker.com -o get-docker.sh
+        sudo sh get-docker.sh
+
+        # Enable and start
         sudo systemctl enable --now docker
         sudo usermod -aG docker $USER
         # Log out/in for group to take effect
+        ```
+
+    - Ubuntu/Debian - **Method 2: Ubuntu Repository (Simpler)**:
+
+        ```bash
+        # Remove snap version first if exists
+        sudo snap remove docker 2>/dev/null || true
+
+        # Install from Ubuntu repos
+        sudo apt update
+        sudo apt install -y docker.io docker-compose-plugin
+
+
+        sudo systemctl enable --now docker
+        sudo usermod -aG docker $USER
+        # Log out/in for group to take effect
+        ```
+
+    - **⚠️ AVOID**: `snap install docker` - Snap Docker has AppArmor restrictions that cause permission issues
+
+- **Install Docker Compose (if missing)**:
+    - **Preferred (Compose v2 plugin)** — already included in both methods above. If you still need it:
+
+        ```bash
+        sudo apt update
+        sudo apt install -y docker-compose-plugin
+        docker compose version
+        ```
+
+    - **Legacy `docker-compose` (v1)** — only if required by older scripts:
+
+        ```bash
+        sudo apt update
+        sudo apt install -y docker-compose
+        docker-compose --version
         ```
 
 - **Verify setup**:
@@ -69,11 +111,14 @@ If you plan to run a second instance (prod) on the same host, reserve a differen
 
 1. **Run `./setup.sh`** - This automated script:
     - Creates your `.env` configuration file
+
     - Generates secure random passwords automatically
     - Sets up all necessary directories
     - Saves you from manual password generation
 
-2. **Run `docker-compose up -d`** - Starts WordPress, MySQL, and FTP
+2. **Run `docker-compose up -d`** - Start
+
+s WordPress, MySQL, and FTP
 
 3. **Open http://localhost:8081** - Complete WordPress installation
 
@@ -340,6 +385,46 @@ lsof -i :2121
 # Fix WordPress file permissions
 docker-compose exec wordpress chown -R www-data:www-data /var/www/html
 docker-compose exec wordpress chmod -R 755 /var/www/html
+```
+
+### Snap Docker Issues (Permission Denied)
+
+If you get "permission denied" errors when stopping/removing containers, you likely have snap Docker installed. Check with:
+
+```bash
+ls -la /usr/bin/docker
+snap list | grep docker
+```
+
+If snap Docker is detected (symlink or snap list shows it), migrate to native Docker:
+
+```bash
+# 1. List volumes to preserve data
+docker volume ls
+
+# 2. Stop and remove snap Docker
+snap stop docker
+snap remove docker
+
+# 3. Install native Docker (choose one method)
+
+# Method A: Official Docker (recommended)
+curl -fsSL https://get.docker.com -o get-docker.sh
+sudo sh get-docker.sh
+
+# Method B: Ubuntu repository
+sudo apt update
+sudo apt install -y docker.io docker-compose-plugin
+
+# 4. Enable and verify
+sudo systemctl enable --now docker
+docker --version
+which docker  # Should show /usr/bin/docker (not snap)
+ls -la /usr/bin/docker  # Should be a real binary, not a symlink
+
+# 5. Restart your containers
+cd /path/to/wordpress
+docker compose up -d
 ```
 
 ### Plugin/Theme Installation Issues (FTP Error)
